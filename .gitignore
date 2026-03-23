@@ -212,3 +212,4 @@ __marimo__/
 *.tfstate.backup
 *.tfvars
 *.tfvars.json
+terraform/*.zip
