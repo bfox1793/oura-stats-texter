@@ -18,37 +18,40 @@ def fetch_score(endpoint: str, start_date: str, end_date: str, token: str) -> Op
 
 def get_scores(token: str) -> dict:
     today = date.today().isoformat()
-    week_ago = (date.today() - timedelta(days=7)).isoformat()
 
     return {
-        "Sleep":     fetch_score("daily_sleep",     today,     today, token),
-        "Readiness": fetch_score("daily_readiness", today,     today, token),
-        "Activity":  fetch_score("daily_activity",  week_ago,  today, token),
+        "Sleep":     fetch_score("daily_sleep",     today, today, token),
+        "Readiness": fetch_score("daily_readiness", today, today, token),
+        "Activity":  (
+            fetch_score("daily_activity", today, today, token)
+            or fetch_score("daily_activity", (date.today() - timedelta(days=7)).isoformat(), today, token)
+        ),
     }
 
 
 def format_message(scores: dict) -> str:
-    today = date.today().isoformat()
-    lines = [f"Oura scores for {today}"]
-    for label, score in scores.items():
-        lines.append(f"  {label:<10}{score if score is not None else 'N/A'}")
-    return "\n".join(lines)
-
-
-def send_sms(message: str) -> None:
-    from twilio.rest import Client
-
-    client = Client(
-        username=os.environ["TWILIO_API_KEY_SID"],
-        password=os.environ["TWILIO_API_KEY_SECRET"],
-        account_sid=os.environ["TWILIO_ACCOUNT_SID"],
+    today = date.today().strftime("%B %d, %Y")
+    score_lines = "\n".join(
+        f"  {label:<10}{score if score is not None else 'N/A'}{'  👑' if score is not None and score >= 85 else ''}"
+        for label, score in scores.items()
     )
-    response = client.messages.create(
-        to=os.environ["RECIPIENT_PHONE_NUMBER"],
-        from_=os.environ["TWILIO_PHONE_NUMBER"],
-        body=message,
+    return f"Oura Scores for {today}\n```\n\n{score_lines}\n```"
+
+
+def send_message(message: str) -> None:
+    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    chat_id = os.environ["TELEGRAM_CHAT_ID"]
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = json.dumps({"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}).encode()
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
-    print(f"Twilio response: sid={response.sid} status={response.status}")
+    with urllib.request.urlopen(req) as resp:
+        result = json.loads(resp.read())
+    print(f"Telegram response: message_id={result['result']['message_id']}")
 
 
 def lambda_handler(event, context):
@@ -62,16 +65,13 @@ def lambda_handler(event, context):
             WithDecryption=encrypted,
         )["Parameter"]["Value"]
 
-    os.environ["OURA_API_KEY"]           = get_param("oura_api_token", encrypted=True)
-    os.environ["TWILIO_ACCOUNT_SID"]     = get_param("twilio_account_sid", encrypted=True)
-    os.environ["TWILIO_API_KEY_SID"]     = get_param("twilio_api_key_sid", encrypted=True)
-    os.environ["TWILIO_API_KEY_SECRET"]  = get_param("twilio_api_key_secret", encrypted=True)
-    os.environ["TWILIO_PHONE_NUMBER"]    = get_param("twilio_phone_number")
-    os.environ["RECIPIENT_PHONE_NUMBER"] = get_param("recipient_phone_number")
+    os.environ["OURA_API_KEY"]        = get_param("oura_api_token", encrypted=True)
+    os.environ["TELEGRAM_BOT_TOKEN"]  = get_param("telegram_bot_token", encrypted=True)
+    os.environ["TELEGRAM_CHAT_ID"]    = get_param("telegram_chat_id")
 
     scores = get_scores(os.environ["OURA_API_KEY"])
     message = format_message(scores)
-    send_sms(message)
+    send_message(message)
 
     return {"statusCode": 200, "body": message}
 
@@ -84,7 +84,7 @@ def main():
     scores = get_scores(token)
     message = format_message(scores)
     print(message)
-    send_sms(message)
+    send_message(message)
 
 
 if __name__ == "__main__":
