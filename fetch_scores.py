@@ -35,13 +35,56 @@ def format_message(scores: dict) -> str:
     return "\n".join(lines)
 
 
+def send_sms(message: str) -> None:
+    from twilio.rest import Client
+
+    client = Client(
+        username=os.environ["TWILIO_API_KEY_SID"],
+        password=os.environ["TWILIO_API_KEY_SECRET"],
+        account_sid=os.environ["TWILIO_ACCOUNT_SID"],
+    )
+    response = client.messages.create(
+        to=os.environ["RECIPIENT_PHONE_NUMBER"],
+        from_=os.environ["TWILIO_PHONE_NUMBER"],
+        body=message,
+    )
+    print(f"Twilio response: sid={response.sid} status={response.status}")
+
+
+def lambda_handler(event, context):
+    import boto3
+
+    ssm = boto3.client("ssm", region_name="us-east-1")
+
+    def get_param(name, encrypted=False):
+        return ssm.get_parameter(
+            Name=f"/oura-stats-texter/{name}",
+            WithDecryption=encrypted,
+        )["Parameter"]["Value"]
+
+    os.environ["OURA_API_KEY"]           = get_param("oura_api_token", encrypted=True)
+    os.environ["TWILIO_ACCOUNT_SID"]     = get_param("twilio_account_sid", encrypted=True)
+    os.environ["TWILIO_API_KEY_SID"]     = get_param("twilio_api_key_sid", encrypted=True)
+    os.environ["TWILIO_API_KEY_SECRET"]  = get_param("twilio_api_key_secret", encrypted=True)
+    os.environ["TWILIO_PHONE_NUMBER"]    = get_param("twilio_phone_number")
+    os.environ["RECIPIENT_PHONE_NUMBER"] = get_param("recipient_phone_number")
+
+    scores = get_scores(os.environ["OURA_API_KEY"])
+    message = format_message(scores)
+    send_sms(message)
+
+    return {"statusCode": 200, "body": message}
+
+
 def main():
     from dotenv import load_dotenv
     load_dotenv()
 
     token = os.environ["OURA_API_KEY"]
     scores = get_scores(token)
-    print(format_message(scores))
+    message = format_message(scores)
+    print(message)
+    send_sms(message)
 
 
 if __name__ == "__main__":
