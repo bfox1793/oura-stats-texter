@@ -8,8 +8,8 @@ resource "aws_ssm_parameter" "oura_api_token" {
   }
 }
 
-resource "aws_ssm_parameter" "twilio_account_sid" {
-  name  = "/oura-stats-texter/twilio_account_sid"
+resource "aws_ssm_parameter" "telegram_bot_token" {
+  name  = "/oura-stats-texter/telegram_bot_token"
   type  = "SecureString"
   value = "PLACEHOLDER"
 
@@ -18,38 +18,8 @@ resource "aws_ssm_parameter" "twilio_account_sid" {
   }
 }
 
-resource "aws_ssm_parameter" "twilio_api_key_sid" {
-  name  = "/oura-stats-texter/twilio_api_key_sid"
-  type  = "SecureString"
-  value = "PLACEHOLDER"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
-
-resource "aws_ssm_parameter" "twilio_api_key_secret" {
-  name  = "/oura-stats-texter/twilio_api_key_secret"
-  type  = "SecureString"
-  value = "PLACEHOLDER"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
-
-resource "aws_ssm_parameter" "twilio_phone_number" {
-  name  = "/oura-stats-texter/twilio_phone_number"
-  type  = "String"
-  value = "PLACEHOLDER"
-
-  lifecycle {
-    ignore_changes = [value]
-  }
-}
-
-resource "aws_ssm_parameter" "recipient_phone_number" {
-  name  = "/oura-stats-texter/recipient_phone_number"
+resource "aws_ssm_parameter" "telegram_chat_id" {
+  name  = "/oura-stats-texter/telegram_chat_id"
   type  = "String"
   value = "PLACEHOLDER"
 

@@ -25,7 +25,7 @@ resource "aws_iam_role_policy" "scheduler_policy" {
   })
 }
 
-resource "aws_scheduler_schedule" "daily_8am_et" {
+resource "aws_scheduler_schedule" "daily_9am_et" {
   name       = "oura-stats-texter-daily"
   group_name = "default"
 
@@ -33,7 +33,7 @@ resource "aws_scheduler_schedule" "daily_8am_et" {
     mode = "OFF"
   }
 
-  schedule_expression          = "cron(0 8 * * ? *)"
+  schedule_expression          = "cron(0 9 * * ? *)"
   schedule_expression_timezone = "America/New_York"
 
   target {
