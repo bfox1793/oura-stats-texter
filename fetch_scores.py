@@ -35,43 +35,6 @@ def format_message(scores: dict) -> str:
     return "\n".join(lines)
 
 
-# --- Lambda entrypoint ---
-
-def lambda_handler(event, context):
-    import boto3
-
-    ssm = boto3.client("ssm", region_name="us-east-1")
-
-    token = ssm.get_parameter(
-        Name="/oura-stats-texter/oura_api_token",
-        WithDecryption=True,
-    )["Parameter"]["Value"]
-
-    sms_gateway_email = ssm.get_parameter(
-        Name="/oura-stats-texter/sms_gateway_email",
-    )["Parameter"]["Value"]
-
-    sender_email = ssm.get_parameter(
-        Name="/oura-stats-texter/sender_email",
-    )["Parameter"]["Value"]
-
-    scores = get_scores(token)
-    message = format_message(scores)
-
-    boto3.client("ses", region_name="us-east-1").send_email(
-        Source=sender_email,
-        Destination={"ToAddresses": [sms_gateway_email]},
-        Message={
-            "Subject": {"Data": "Oura Scores"},
-            "Body": {"Text": {"Data": message}},
-        },
-    )
-
-    return {"statusCode": 200, "body": message}
-
-
-# --- Local entrypoint ---
-
 def main():
     from dotenv import load_dotenv
     load_dotenv()

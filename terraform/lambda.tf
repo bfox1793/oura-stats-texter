@@ -30,11 +30,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Resource = "arn:aws:ssm:us-east-1:*:parameter/oura-stats-texter/*"
       },
       {
-        Effect   = "Allow"
-        Action   = ["ses:SendEmail"]
-        Resource = "*"
-      },
-      {
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
