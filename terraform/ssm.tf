@@ -8,8 +8,8 @@ resource "aws_ssm_parameter" "oura_api_token" {
   }
 }
 
-resource "aws_ssm_parameter" "telegram_bot_token" {
-  name  = "/oura-stats-texter/telegram_bot_token"
+resource "aws_ssm_parameter" "discord_webhook_url" {
+  name  = "/oura-stats-texter/discord_webhook_url"
   type  = "SecureString"
   value = "PLACEHOLDER"
 
@@ -18,8 +18,8 @@ resource "aws_ssm_parameter" "telegram_bot_token" {
   }
 }
 
-resource "aws_ssm_parameter" "telegram_chat_id" {
-  name  = "/oura-stats-texter/telegram_chat_id"
+resource "aws_ssm_parameter" "discord_public_key" {
+  name  = "/oura-stats-texter/discord_public_key"
   type  = "String"
   value = "PLACEHOLDER"
 
